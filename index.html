@@ -1,0 +1,65 @@
+<body style="background:white"></body>
+<script src="https://unpkg.com/tone"></script>
+<script src="https://cdn.jsdelivr.net/gh/netizenorg/netnet-standard-library/build/nn.min.js"></script>
+<script>
+  /* global Tone, nn */
+  //loading images & dimensions
+  const pinkFlower = 'PinkFlower.png'
+  const orangeFlower = 'TransparentOrangeFlower.png'
+  const redFlower = 'flower-4ms.png'
+  const blueFlower = 'SmallBlueFlower.png'
+  const greenFlower = 'GreenFlower.png'
+  
+  const flowers = [pinkFlower, orangeFlower, redFlower, blueFlower, greenFlower]
+  const screenWidth = nn.width
+  const screenLength = nn.length
+  
+  //select your scale:
+  
+  const scaleText = nn.create('div')
+    .content('Select your scale!')
+    .addTo('body')
+  
+//   for (let i = 0; i < len(flowers); i++) {
+
+//   }
+  //set up synth
+  const synth = new Tone.Synth().toDestination()
+  
+  //loop to make multiple petals
+  for (let i = 0; i < 5; i++) {
+    const flower = nn.create('div')
+    // .css({
+    //   opacity: 0.3,
+    //   width: 100,
+    //   height: 100,
+    //   background: `url(${pinkFlower})`,
+    //   backgroundSize: 'cover',
+    //   //clipPath: 'circle(60% at 60% 60%)'
+    // })
+    //   .position(200 + (i*100), 200)
+    //   .addTo('body')
+    
+    const color = nn.create('div')
+    .css({
+      opacity: 0.3,
+      width: 100,
+      height: 100,
+      background: `url(${pinkFlower})`,
+      backgroundSize: 'cover',
+      clipPath: 'circle(60% at 60% 60%)'
+    })
+      .position(191 + (i*100), 191)
+      .addTo('body')
+      .on('mouseenter', () => playSound(color, i))
+      .on('mouseleave', 
+          () => {color.css({background: `url(${pinkFlower})`, 
+                          backgroundSize: 'cover'})})
+  }
+  
+  //set up function to play sound and select random colors 
+  function playSound(circle, i) {
+    synth.triggerAttackRelease(200 * (i+1), '8n')
+    circle.css('background', nn.randomColor())
+  }
+</script>
