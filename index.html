@@ -10,7 +10,16 @@
   // const blueFlower = 'SmallBlueFlower.png'
   // const greenFlower = 'GreenFlower.png'
   
+  //determening the scale
+ 
   // const flowers = [pinkFlower, orangeFlower, redFlower, blueFlower, greenFlower]
+  const hueMax = 360
+  const otherMax = 100
+  const chordsList = Object.keys(nn.chords)
+  const chordLen = Object.keys(nn.chords).length
+  const modeNames = Object.keys(nn.mode)
+  const modeLen = Object.keys(nn.mode).length
+  
   const screenWidth = nn.width
   const screenLength = nn.length
   //take in user image
@@ -18,6 +27,19 @@
     .content('upload image')
     .set('id', 'upload')
     .addTo('body')
+  //first sort the modes by 'brightness'
+  function brightness(intervals) {
+  let bright = 0;
+  for (let i = 1; i < intervals.length; i++) {
+    const step = intervals[i] - intervals[i - 1];
+    if (step >= 2) bright += step;
+  }
+  return bright;
+}
+
+  const sorted = Object.entries(nn.modes)
+    .map(([name, arr]) => ({ name, arr, bright: brightness(arr) }))
+    .sort((a, b) => a.bright - b.bright);  
   
   //strictly image (png, jpg) files, run through helper HSV func
   const uploader = new nn.FileUploader({
@@ -26,7 +48,28 @@
       const hsv = await dominantHSVFromBase64(file.data)
       const arr = nn.notes
       //const idx = Math.floor((hsv.h / 360) * arr.length) % arr.length
+      //setup values to create inst and play sound
+      //hue = mode
+      const hueToMode = otherMax/ModeLen //2.32
+      let modeIdx = math.floor(hsv.h/hueToMode)
+      let mode = sorted[modeIdx]
+      
+      //saturation = key
+      let key
+      
+      //value = chord
+      let chord
+      
+      //create scale
+      
+      let scale = []
+      //
       //pass hsv info to create instrument
+      
+      //length of instrument
+      let len = mode + key
+      setupInstrument(len)
+      
       setupInstrument(hsv.h, hsv.s, hsv.v)
       //playChord(idx)
     },
@@ -83,11 +126,11 @@
 //   }
   //set up synth
   
-  function setupInstrument(h, s, v) {
+  function setupInstrument(length, h, s, v) {
     const synth = new Tone.Synth().toDestination()
-    const tuningSystem = 12
+    //const tuningSystem = 12
     
-    for (let i = 0; i < tuningSystem; i++) {
+    for (let i = 0; i < length; i++) {
       const keyUI = nn.create('div')
       .css({
         opacity: 0.3,
@@ -98,48 +141,38 @@
       })
         .position(191 + (i*100), 191)
         .addTo('body')
-        .on('mouseenter', () => playSound(color, h, s, v))
+        .on('mouseenter', () => playSound(keyUI, h, s, v))
         .on('mouseleave', 
-          () => {color.css({background: 'white', 
+          () => {keyUI.css({background: 'black', 
                           backgroundSize: 'cover'})})
     }
     
   }
-  const synth = new Tone.Synth().toDestination()
-  
-  //loop to make multiple petals
-  for (let i = 0; i < 5; i++) {
-    // const flower = nn.create('div')
-    // .css({
-    //   opacity: 0.3,
-    //   width: 100,
-    //   height: 100,
-    //   //background: `url(${pinkFlower})`,
-    //   backgroundSize: 'cover',
-    //   //clipPath: 'circle(60% at 60% 60%)'
-    // })
-    //   .position(200 + (i*100), 200)
-    //   .addTo('body')
-    
-    const color = nn.create('div')
-    .css({
-      opacity: 0.3,
-      width: 100,
-      height: 100,
-      //background: `url(${pinkFlower})`,
-      backgroundSize: 'cover',
-      clipPath: 'circle(60% at 60% 60%)'
-    })
-      .position(191 + (i*100), 191)
-      .addTo('body')
-      .on('mouseenter', () => playSound(color, hsv.h, hsv.h, hsv.v))
-      .on('mouseleave', 
-          () => {color.css({background: 'white', 
-                          backgroundSize: 'cover'})})
-  }
+
   
   //set up function to play sound and select random colors 
   function playSound(circle, h, s, v) {
+    //select scale
+    // use value to find mode (brightness) by dividing into 100% into 43 pieces
+    const hueToMode = otherMax/ModeLen //2.32
+    let modeIdx = Math.floor(h/hueToMode) //find idx btwn 0-42 * need to fix
+    let mode = sorted[modeIdx]
+    
+    //hue correpsons to the key (A, B, C)
+    let key = 
+    
+    //v corresponds to the chord
+    let chord 
+    
+    //create the scale
+    scale = [
+      ..nn.createScale(, mode)
+    ]
+    
+    //they'll need to be declared outside bc need to create insturment
+    
+    
+    //create the instrument
     synth.triggerAttackRelease(200 * (i+1), '8n')
     circle.css('background', nn.randomColor())
   }
