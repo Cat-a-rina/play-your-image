@@ -1,6 +1,6 @@
 <body style="background:white"></body>
 <script src="https://unpkg.com/tone"></script>
-<script src="https://cdn.jsdelivr.net/gh/netizenorg/netnet-standard-library/build/nn.min.js"></script>
+<script src="https://algorithmicmusic.online/js/libs/nn.min.js"></script>
 <script>
   /* global Tone, nn */
   //loading images & dimensions
@@ -13,14 +13,15 @@
   //determening the scale
  
   // const flowers = [pinkFlower, orangeFlower, redFlower, blueFlower, greenFlower]
+  
   const hueMax = 360
   const satMax = 100
   const valMax = 100
   
-  const notesList = Object.keys(nn.notes)
+  const notesList = nn.notes
   const notesLen = notesList.length
   
-  const modeNames = Object.keys(nn.mode)
+  const modeNames = Object.keys(nn.modes)
   const modeLen = modeNames.length
   
   const chordsList = Object.keys(nn.chords)
@@ -28,6 +29,8 @@
   
   const screenWidth = nn.width
   const screenLength = nn.length
+  
+  let scale
   //take in user image
   const btn = nn.create('button')
     .content('upload image')
@@ -58,40 +61,38 @@
       
       //hue = note/key, C, D, E etc. selecting the 'color'
       //given value 0-360, scale to a note/key options (128)
-      const scaledKeyFromHueIdx = Math.round((hsv.h/hueMax) * notesLen)
+      const scaledKeyFromHueIdx = Math.round((hsv.h/hueMax) * notesLen) % notesLen
       const key = notesList[scaledKeyFromHueIdx]
+      console.log(notesList)
       
       //saturation = mode,how much of the color is there/do we want (max 100%), (can switch w value depending on how it sounds)
       //given value 0-100%, scale to mode options (modeLen)
-      const scaledModeFromSatIdx = Math.round((hsv.s/satMax) * modeLen)
-      const mode = sortedModeNames[scaledModeFromSatIdx]
+      const scaledModeFromSatIdx = Math.round((hsv.s/satMax) * modeLen) % modeLen
+      const mode = sortedModeNames[scaledModeFromSatIdx].name
       
       //value = chord, brightness of the color (max 100%)
-      const scaledChordFromValIdx = Math.round((hsv.v/valMax) * chordLen)
+      const scaledChordFromValIdx = Math.round((hsv.v/valMax) * chordLen) % chordLen
       const chordShape = chordsList[scaledChordFromValIdx]
       
       //create scale
       //test +3, +4
-      let scale = [
+      scale = [
         ...nn.createScale(key + 3, mode),
         ...nn.createScale(key + 4, mode)
       ]
       
       const chord = nn.createChord(scale, chordShape)
       
+      console.log(chord)
       let len = chord.length
       
       setupInstrument(len, scale, chord)
-      
       
       //
       //pass hsv info to create instrument
       
       //length of instrument
-      
-      setupInstrument(len)
-      
-      setupInstrument(hsv.h, hsv.s, hsv.v)
+
       //playChord(idx)
     },
     error: (err) => {
@@ -148,18 +149,19 @@
   //set up synth
   
   //create playable instrument and notes
+  const synth = new Tone.Synth().toDestination()
   function setupInstrument(length, scale, chord) {
-    const synth = new Tone.Synth().toDestination()
+    //const synth = new Tone.Synth().toDestination()
     //const tuningSystem = 12
-    
+    console.log(length)
     for (let i = 0; i < length; i++) {
       const keyUI = nn.create('div')
       .css({
         opacity: 0.3,
-        width: 100,
-        height: 300,
+        width: 50,
+        height: 300 + (50 * (i % 2)),
         backgroundSize: 'cover',
-        clipPath:'circle(60% at 60% 60%)'
+        clipPath:'circle(60% at 50% 50%)'
       })
         .position(191 + (i*100), 191)
         .addTo('body')
@@ -179,7 +181,7 @@
     
     const note = chord[i % length]
     //create the instrument
-    synth.triggerAttackRelease(note, '8n')
+    synth.triggerAttackRelease(note, '2n')
     circle.css('background', nn.randomColor())
   }
 </script>
