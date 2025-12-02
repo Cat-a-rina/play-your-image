@@ -13,7 +13,7 @@
   //determening the scale
  
   // const flowers = [pinkFlower, orangeFlower, redFlower, blueFlower, greenFlower]
-  
+  //brightness doesnt quite work. I think its the way brightenss' is decided/sorted and how brightness is picked based on the hue
   const hueMax = 360
   const satMax = 100
   const valMax = 100
@@ -30,12 +30,19 @@
   const screenWidth = nn.width
   const screenLength = nn.length
   
+  let divsPresent = false
+  
   let scale
   //take in user image
   const btn = nn.create('button')
     .content('upload image')
     .set('id', 'upload')
     .addTo('body')
+    .position(screenWidth/2 - 50, 50)
+  if (divsPresent) {
+    btn.on('mousedown', deleteDiv())
+  }
+
   //first sort the modes by 'brightness'
   function brightness(intervals) {
   let bright = 0;
@@ -49,14 +56,14 @@
   const sortedModeNames = Object.entries(nn.modes)
     .map(([name, arr]) => ({ name, arr, bright: brightness(arr) }))
     .sort((a, b) => a.bright - b.bright);  
+  console.log(sortedModeNames)
   
   //strictly image (png, jpg) files, run through helper HSV func
   const uploader = new nn.FileUploader({
     click: '#upload',
     ready: async (file) => {
       const hsv = await dominantHSVFromBase64(file.data)
-      //const arr = nn.notes
-      //const idx = Math.floor((hsv.h / 360) * arr.length) % arr.length
+
       //setup values to create inst and play sound
       
       //hue = note/key, C, D, E etc. selecting the 'color'
@@ -67,7 +74,8 @@
       
       //saturation = mode,how much of the color is there/do we want (max 100%), (can switch w value depending on how it sounds)
       //given value 0-100%, scale to mode options (modeLen)
-      const scaledModeFromSatIdx = Math.round((hsv.s/satMax) * modeLen) % modeLen
+      const scaledModeFromSatIdx = Math.round((hsv.s/satMax) * modeLen + 500) % modeLen
+      const modeArrLen = sortedModeNames[scaledModeFromSatIdx].arr.length
       const mode = sortedModeNames[scaledModeFromSatIdx].name
       
       //value = chord, brightness of the color (max 100%)
@@ -80,20 +88,17 @@
         ...nn.createScale(key + 3, mode),
         ...nn.createScale(key + 4, mode)
       ]
-      
+      console.log('scale is ' + scale)
+      console.log(chordShape)
       const chord = nn.createChord(scale, chordShape)
       
-      console.log(chord)
-      let len = chord.length
+      //console.log(chord.value)
+      //need to set length as length of chord that will played, not mode bc not all notes in mode will be played if we select a specific chord
+      console.log(modeArrLen)
+      let len = modeArrLen
       
       setupInstrument(len, scale, chord)
-      
-      //
-      //pass hsv info to create instrument
-      
-      //length of instrument
 
-      //playChord(idx)
     },
     error: (err) => {
       console.error(err)
@@ -151,19 +156,20 @@
   //create playable instrument and notes
   const synth = new Tone.Synth().toDestination()
   function setupInstrument(length, scale, chord) {
+    divsPresent = true
     //const synth = new Tone.Synth().toDestination()
     //const tuningSystem = 12
     console.log(length)
     for (let i = 0; i < length; i++) {
       const keyUI = nn.create('div')
       .css({
-        opacity: 0.3,
+        opacity: 0.8,
         width: 50,
         height: 300 + (50 * (i % 2)),
         backgroundSize: 'cover',
         clipPath:'circle(60% at 50% 50%)'
       })
-        .position(191 + (i*100), 191)
+        .position(((screenWidth/2) - 175) + (i*100), 100) 
         .addTo('body')
         .on('mouseenter', () => playSound(keyUI, scale, chord, i, length))
         .on('mouseleave', 
@@ -175,13 +181,19 @@
 
   
   //set up function to play sound and select random colors 
-  function playSound(circle, scale, chord, i, length) {
+  function playSound(keyUI, scale, chord, i, length) {
     
     //they'll need to be declared outside bc need to create insturment
     
     const note = chord[i % length]
     //create the instrument
-    synth.triggerAttackRelease(note, '2n')
-    circle.css('background', nn.randomColor())
+    synth.triggerAttackRelease(note, 1)
+    keyUI.css('background', nn.randomColor())
   }
+  function deleteDiv() {
+    if (divsPresent) {
+      keyUI.remove()
+    }
+  }
+  
 </script>
