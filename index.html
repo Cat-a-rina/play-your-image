@@ -30,8 +30,6 @@
   const screenWidth = nn.width
   const screenLength = nn.length
   
-  let divsPresent = false
-  
   let scale
   //take in user image
   const btn = nn.create('button')
@@ -39,10 +37,12 @@
     .set('id', 'upload')
     .addTo('body')
     .position(screenWidth/2 - 50, 50)
-  if (divsPresent) {
-    btn.on('mousedown', deleteDiv())
-  }
 
+  const imgDisplay = nn.create('img')
+    .css({
+    width: 50,
+    height: 'auto',
+  }).addTo('body')
   //first sort the modes by 'brightness'
   function brightness(intervals) {
   let bright = 0;
@@ -56,21 +56,25 @@
   const sortedModeNames = Object.entries(nn.modes)
     .map(([name, arr]) => ({ name, arr, bright: brightness(arr) }))
     .sort((a, b) => a.bright - b.bright);  
-  console.log(sortedModeNames)
+
   
+  let scaledDuration
   //strictly image (png, jpg) files, run through helper HSV func
   const uploader = new nn.FileUploader({
     click: '#upload',
     ready: async (file) => {
       const hsv = await dominantHSVFromBase64(file.data)
-
+      
+      imgDisplay.set('src', file.data)
+      //get hue to get duration of play
+      let normalized = (hsv.h/360)
+      scaledDuration = Math.round(normalized*7) + 1
       //setup values to create inst and play sound
       
       //hue = note/key, C, D, E etc. selecting the 'color'
       //given value 0-360, scale to a note/key options (128)
       const scaledKeyFromHueIdx = Math.round((hsv.h/hueMax) * notesLen) % notesLen
       const key = notesList[scaledKeyFromHueIdx]
-      console.log(notesList)
       
       //saturation = mode,how much of the color is there/do we want (max 100%), (can switch w value depending on how it sounds)
       //given value 0-100%, scale to mode options (modeLen)
@@ -83,22 +87,21 @@
       const chordShape = chordsList[scaledChordFromValIdx]
       
       //create scale
-      //test +3, +4
+      console.log(scaledDuration)
       scale = [
-        ...nn.createScale(key + 3, mode),
-        ...nn.createScale(key + 4, mode)
+        ...nn.createScale(key + scaledDuration, mode),
+        ...nn.createScale(key + Math.round(scaledDuration/2), mode)
       ]
+      
       console.log('scale is ' + scale)
-      console.log(chordShape)
+
       const chord = nn.createChord(scale, chordShape)
       
       //console.log(chord.value)
       //need to set length as length of chord that will played, not mode bc not all notes in mode will be played if we select a specific chord
-      console.log(modeArrLen)
-      let len = modeArrLen
+      let len = chord.length
       
       setupInstrument(len, scale, chord)
-
     },
     error: (err) => {
       console.error(err)
@@ -187,13 +190,11 @@
     
     const note = chord[i % length]
     //create the instrument
-    synth.triggerAttackRelease(note, 1)
+    duration = scaledDuration + 'n'
+    console.log('duration:', duration)
+    synth.triggerAttackRelease(note, duration)
     keyUI.css('background', nn.randomColor())
   }
-  function deleteDiv() {
-    if (divsPresent) {
-      keyUI.remove()
-    }
-  }
+
   
 </script>
